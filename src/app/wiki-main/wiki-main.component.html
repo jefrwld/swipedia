@@ -1,0 +1,7 @@
+<div *ngIf="article()">
+    <h1>{{ article().title }}</h1>
+    <p>{{ article().extract }}</p>
+    <a [href]="'https://en.wikipedia.org/wiki/' + article().title" target="_blank">Read more</a>
+    <button (click)="fetchRandomArticle()">Next Article</button>
+</div>
+  
