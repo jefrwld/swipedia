@@ -13,7 +13,6 @@ import { WikiService } from '../services/wiki.service';
 export class WikiMainComponent {
   private wikiService = inject(WikiService);
   article = signal<any>(null);
-
   constructor() {
     this.fetchRandomArticle();
   }
@@ -21,7 +20,18 @@ export class WikiMainComponent {
   fetchRandomArticle() {
     this.wikiService.getRandomArticle().subscribe(data => {
       this.article.set(data);
+      console.log(this.article);
     });
+  }
+
+  dontLike(){
+    //do something with article user did not like
+    this.fetchRandomArticle();
+  }
+
+  like(){
+    //do something with article user did liked
+    this.fetchRandomArticle();
   }
 
 
