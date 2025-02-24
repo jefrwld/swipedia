@@ -1,18 +1,18 @@
-import { Component, inject, signal, HostListener } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { WikiService } from '../services/wiki.service';
 
 @Component({
   selector: 'app-wiki',
   standalone: true,
-  imports: [CommonModule], // Kein Module mehr, alles hier!
+  imports: [CommonModule], 
   templateUrl: './wiki-main.component.html',
   styleUrls: ['./wiki-main.component.css']
 })
-
 export class WikiMainComponent {
   private wikiService = inject(WikiService);
   article = signal<any>(null);
+
   constructor() {
     this.fetchRandomArticle();
   }
@@ -20,20 +20,16 @@ export class WikiMainComponent {
   fetchRandomArticle() {
     this.wikiService.getRandomArticle().subscribe(data => {
       this.article.set(data);
-      console.log(this.article);
+      console.log(this.article());
     });
   }
 
-  dontLike(){
-    //do something with article user did not like
+  dontLike() {
     this.fetchRandomArticle();
   }
 
-  like(){
-    //do something with article user did liked
+  like() {
     this.fetchRandomArticle();
   }
-
-
 }
 

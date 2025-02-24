@@ -1,14 +1,16 @@
-<div class="main-wrapper" >
-    <div *ngIf="article()" class="article-content">
-      <h1>{{ article().title }}</h1>
-      <p>{{ article().extract }}</p>
-      <a [href]="'https://en.wikipedia.org/wiki/' + article().title" target="_blank">Read more</a>
+<div class="main-wrapper">
+  <div *ngIf="article()" class="article-content">
+    <h1>{{ article().title }}</h1>
+    
+    <!-- Bild anzeigen, falls vorhanden -->
+    <img *ngIf="article().thumbnail" [src]="article().thumbnail.source" [alt]="article().title">
 
-      <div class="card-buttons">
-        <button (click)="dontLike()">No</button>
-        <button (click)="like()">yes</button>
-      </div>
+    <p>{{ article().extract }}</p>
+    <a [href]="'https://en.wikipedia.org/wiki/' + article().title" target="_blank">Read more</a>
+
+    <div class="card-buttons">
+      <button (click)="dontLike()">No</button>
+      <button (click)="like()">Yes</button>
     </div>
-
+  </div>
 </div>
-  
