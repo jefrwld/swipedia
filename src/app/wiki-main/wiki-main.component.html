@@ -10,11 +10,11 @@
     <div class="article-text-content">
       <p>{{ article().extract }}</p>
     </div>
-    <a [href]="'https://en.wikipedia.org/wiki/' + article().title" target="_blank">Read more</a>
 
   </div>
     <div class="card-buttons">
       <button (click)="dontLike()">No</button>
+    <a [href]="'https://en.wikipedia.org/wiki/' + article().title" target="_blank">Read more</a>
       <button (click)="like()">Yes</button>
     </div>
 </div>
