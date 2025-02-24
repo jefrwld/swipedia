@@ -12,17 +12,37 @@
   display: flex;
   justify-content: center;
   width: 100%;
-  height: 400px;
+  height: 800px;
 }
 
 .article-content {
   width: 400px;
   border: 2px solid black;
+  display: flex;
+  flex-direction: column;
+}
+
+.article-text-content {
+  max-height: 300px;
+  height: 300px;
+  overflow-y: auto;
+  border: 2px solid red;
+  padding: 20px;
 }
 
 .card-buttons {
   width: 100%;
   display: flex;
   justify-content: space-between;
+}
+
+
+.article-image {
+  max-width: 100%;  /* Ensures image does not exceed the container width */
+  max-height: 300px;  /* Maintains aspect ratio */
+  display: block;  /* Removes bottom spacing issues */
+  margin: 10px auto;  /* Centers the image */
+  border-radius: 10px; /* Adds rounded corners for a smoother look */
+  object-fit: cover; /
 }
   
