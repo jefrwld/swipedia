@@ -5,7 +5,7 @@ import { WikiService } from '../services/wiki.service';
 @Component({
   selector: 'app-wiki',
   standalone: true,
-  imports: [CommonModule], 
+  imports: [CommonModule],
   templateUrl: './wiki-main.component.html',
   styleUrls: ['./wiki-main.component.css']
 })
@@ -31,5 +31,6 @@ export class WikiMainComponent {
   like() {
     this.fetchRandomArticle();
   }
+
 }
 
