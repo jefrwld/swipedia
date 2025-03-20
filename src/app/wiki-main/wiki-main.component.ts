@@ -20,16 +20,22 @@ export class WikiMainComponent {
   fetchRandomArticle() {
     this.wikiService.getRandomArticle().subscribe(data => {
       this.article.set(data);
-      console.log(this.article());
     });
   }
+
+  fetchTopicsOfArticle(title: string){
+    let fetchedTopics = this.wikiService.getTopicsOfArticle(title);
+  }
+
 
   dontLike() {
     this.fetchRandomArticle();
   }
 
-  like() {
+  like(title: string) {
+    console.log(title);
     this.fetchRandomArticle();
+    this.fetchTopicsOfArticle(title);
   }
 
 }

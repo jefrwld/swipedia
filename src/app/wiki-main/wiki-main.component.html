@@ -13,7 +13,7 @@
 
   </div>
     <div class="card-buttons">
-      <i (click)="like()" class="fa-solid fa-heart fa-xl btn"></i>
+      <i (click)="like(article().title)" class="fa-solid fa-heart fa-xl btn"></i>
       <a [href]="'https://en.wikipedia.org/wiki/' + article().title" target="_blank" class="btn">Read more</a>
       <i (click)="dontLike()" class="fa-solid fa-ban fa-xl btn"></i>
     </div>
