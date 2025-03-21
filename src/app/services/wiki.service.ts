@@ -3,6 +3,7 @@ import {HttpClient} from '@angular/common/http';
 import {Observable, map, of} from 'rxjs';
 import {switchMap} from 'rxjs/operators';
 import {randomArticle} from '../wiki-main/interfaces';
+import { HttpParams } from '@angular/common/http';  
 
 
 @Injectable({
@@ -96,6 +97,31 @@ export class WikiService {
       })
     );
   }
+
+  getArticlesForWikidataTopic(topicId: string): Observable<string[]> {
+    const query = `
+      SELECT ?articleTitle WHERE {
+        ?item wdt:P921 wd:${topicId} .
+        ?article schema:about ?item .
+        ?article schema:isPartOf <https://en.wikipedia.org/> .
+        ?article schema:name ?articleTitle .
+      }
+      LIMIT 50
+    `;
+    const url = 'https://query.wikidata.org/sparql';
+    const headers = { 'Accept': 'application/sparql-results+json' };
+    const params = new HttpParams().set('query', query);
+  
+    return this.http.get<any>(url, { headers, params }).pipe(
+      map(response => {
+        const results = response.results?.bindings || [];
+        return results.map((r: any) => r.articleTitle.value);
+      })
+    );
+  }
+
+
+  
 
 
 

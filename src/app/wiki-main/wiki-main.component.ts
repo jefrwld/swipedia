@@ -36,6 +36,14 @@ export class WikiMainComponent {
       this.article.set(data);
     })
   }
+
+  fetchArticlesForTopicId(wikidataTopicId: string) {
+    this.wikiService.getArticlesForWikidataTopic(wikidataTopicId).subscribe(titles => {
+      const randomTitle = titles[Math.floor(Math.random() * titles.length)];
+      this.article.set({ title: randomTitle });
+    });
+  }
+  
   
 
 
@@ -46,6 +54,7 @@ export class WikiMainComponent {
   like(title: string) {
     this.fetchRandomArticle();
     this.fetchSemanticTopicsOfArticle("Albert Einstein");
+    this.fetchArticlesForTopicId();
   }
 
   addTopicsToLikedTopics(topics: string | string[]): void {
