@@ -45,32 +45,30 @@ export class WikiMainComponent {
     if (!topics) return;
   
     const raw = localStorage.getItem('likedTopics');
-    const counts: Record<string, number> = raw ? JSON.parse(raw) : {};
-  
+    const counts: Record<string, { count: number; weight: number }> = raw ? JSON.parse(raw) : {};
     const newTopics = Array.isArray(topics) ? topics : [topics];
+    const weightPerTopic = 1 / newTopics.length; 
   
     newTopics.forEach(topic => {
       if (typeof topic === 'string' && topic.trim() !== '') {
-        counts[topic] = (counts[topic] || 0) + 1;
+        if (!counts[topic]) {
+          counts[topic] = { count: 0, weight: 0 };
+        }
+        counts[topic].count += weightPerTopic;
       }
     });
   
-    localStorage.setItem('likedTopics', JSON.stringify(counts));
-    //this.getAllTopics();
-    this.calculateRecommendationWeights(raw);
-  }
-
-  getAllTopics() {
-    let savedTopics = localStorage.getItem('likedTopics');
-    console.log(savedTopics);
+    const totalLikes = Object.values(counts).reduce((sum, entry) => sum + entry.count, 0);
   
-    if (savedTopics) {
-      let topicsDict = JSON.parse(savedTopics);
-      Object.entries(topicsDict).forEach(([topic, isLiked]) => {
-        console.log(`Topic: ${topic}, Liked: ${isLiked}`);
-      });
-    }
+    Object.entries(counts).forEach(([topic, data]) => {
+      data.weight = totalLikes > 0 ? +(data.count / totalLikes * 100).toFixed(2) : 0;
+    });
+  
+    localStorage.setItem('likedTopics', JSON.stringify(counts));
   }
+  
+  
+  
 
   calculateRecommendationWeights(topics: any){
 
