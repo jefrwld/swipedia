@@ -23,11 +23,18 @@ export class WikiMainComponent {
     });
   }
 
-  fetchTopicsOfArticle(title: string) {
-    this.wikiService.getTopicsOfArticle(title).subscribe((topics: string[]) => {
-      console.log("Gefundene Topics:", topics);
+  fetchSemanticTopicsOfArticle(title: string) {
+    this.wikiService.getSemanticTopicsOfArticle(title).subscribe(topics => {
+      console.log("Semantische Themen:", topics);
       this.addTopicsToLikedTopics(topics);
     });
+  }
+  
+
+  fetchArticleOfTopic(topic: string){
+    this.wikiService.getArticleForTopic(topic).subscribe(data => {
+      this.article.set(data);
+    })
   }
   
 
@@ -38,7 +45,7 @@ export class WikiMainComponent {
 
   like(title: string) {
     this.fetchRandomArticle();
-    this.fetchTopicsOfArticle(title);
+    this.fetchSemanticTopicsOfArticle("Albert Einstein");
   }
 
   addTopicsToLikedTopics(topics: string | string[]): void {
@@ -65,13 +72,6 @@ export class WikiMainComponent {
   
     localStorage.setItem('likedTopics', JSON.stringify(counts));
   }
-  
-  
-  }
-  
-
-  
-  
   
 
 }

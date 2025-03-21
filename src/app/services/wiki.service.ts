@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import {HttpClient} from '@angular/common/http';
-import {Observable, map} from 'rxjs';
+import {Observable, map, of} from 'rxjs';
+import {switchMap} from 'rxjs/operators';
 import {randomArticle} from '../wiki-main/interfaces';
 
 
@@ -12,7 +13,6 @@ import {randomArticle} from '../wiki-main/interfaces';
 export class WikiService {
 
   private readonly WIKIPEDIA_RANDOM_API = 'https://en.wikipedia.org/api/rest_v1/page/random/summary';
-
   constructor(private http: HttpClient) {}
 
   getRandomArticle(): Observable<randomArticle> {
@@ -20,22 +20,85 @@ export class WikiService {
     return randomArticle
   }
 
-  getTopicsOfArticle(title: string): Observable<string[]> {
-    const encodedTitle = encodeURIComponent(title);
-    const url = `https://en.wikipedia.org/w/api.php?action=query&prop=categories&titles=${encodedTitle}&format=json&origin=*`;
+
+  getSemanticTopicsOfArticle(title: string): Observable<string[]> {
+    const wikipediaUrl = `https://en.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(title)}&prop=pageprops&format=json&origin=*`;
   
-    return this.http.get<any>(url).pipe(
-      map((response: any) => {
-        const pages = response?.query?.pages;
+    return this.http.get<any>(wikipediaUrl).pipe(
+      map(response => {
+        const pages = response.query.pages;
         const firstPage = pages[Object.keys(pages)[0]];
-        const rawCategories = firstPage?.categories || [];
+        const wikidataId = firstPage?.pageprops?.wikibase_item;
   
-        return rawCategories.map((cat: any) =>
-          cat.title.replace(/^Category:/, '')
+        if (!wikidataId) throw new Error("Keine Wikidata-ID gefunden");
+  
+        return wikidataId;
+      }),
+      // Jetzt HTTP-Request an Wikidata
+      switchMap((wikidataId: string) => {
+        const wikidataUrl = `https://www.wikidata.org/wiki/Special:EntityData/${wikidataId}.json`;
+        return this.http.get<any>(wikidataUrl);
+      }),
+      map(wikidata => {
+        const entity = Object.values(wikidata.entities)[0] as any;
+        const claims = entity.claims;
+  
+        const topicIds: string[] = [];
+  
+        // Relevante Properties (du kannst hier noch weitere hinzufügen)
+        const relevantProperties = ['P101', 'P921', 'P106'];
+  
+        relevantProperties.forEach(prop => {
+          if (claims[prop]) {
+            claims[prop].forEach((claim: any) => {
+              const id = claim.mainsnak?.datavalue?.value?.id;
+              if (id) topicIds.push(id);
+            });
+          }
+        });
+  
+        return topicIds; // Rückgabe: Liste von Wikidata-IDs der Themen
+      }),
+      // Optional: Wikidata-IDs in lesbare Labels umwandeln
+      switchMap((topicIds: string[]) => {
+        if (topicIds.length === 0) return of([]);
+        const idsStr = topicIds.join('|');
+        const labelUrl = `https://www.wikidata.org/w/api.php?action=wbgetentities&ids=${idsStr}&format=json&languages=en&props=labels&origin=*`;
+        return this.http.get<any>(labelUrl).pipe(
+          map(labelResponse => {
+            const entities = labelResponse.entities;
+            return Object.values(entities).map((e: any) => e.labels?.en?.value).filter(Boolean);
+          })
         );
       })
     );
   }
+  
+
+  getArticleForTopic(topic: string): Observable<string> {
+    const encodedTopic = encodeURIComponent(`Category:${topic}`);
+    const url = `https://en.wikipedia.org/w/api.php?action=query&list=categorymembers&cmtitle=${encodedTopic}&cmlimit=50&format=json&origin=*`;
+
+    return this.http.get<any>(url).pipe(
+      map(response => {
+        const members = response?.query?.categorymembers || [];
+
+        // Nur echte Artikel (ns = 0), keine Begriffsklärungen, keine Kategorien
+        const articles = members.filter((item: any) => item.ns === 0);
+
+        if (articles.length === 0) {
+          throw new Error('Keine Artikel in dieser Kategorie gefunden');
+        }
+
+        // Zufällig einen auswählen
+        const randomArticle = articles[Math.floor(Math.random() * articles.length)];
+        return randomArticle.title; // oder return whole article object
+      })
+    );
+  }
+
+
+
   
   
   
