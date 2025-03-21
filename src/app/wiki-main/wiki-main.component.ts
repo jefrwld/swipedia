@@ -47,14 +47,13 @@ export class WikiMainComponent {
     const raw = localStorage.getItem('likedTopics');
     const counts: Record<string, { count: number; weight: number }> = raw ? JSON.parse(raw) : {};
     const newTopics = Array.isArray(topics) ? topics : [topics];
-    const weightPerTopic = 1 / newTopics.length; 
   
     newTopics.forEach(topic => {
       if (typeof topic === 'string' && topic.trim() !== '') {
         if (!counts[topic]) {
           counts[topic] = { count: 0, weight: 0 };
         }
-        counts[topic].count += weightPerTopic;
+        counts[topic].count += 1;
       }
     });
   
@@ -68,31 +67,6 @@ export class WikiMainComponent {
   }
   
   
-  
-
-  calculateRecommendationWeights(topics: any){
-
-    let topicWeights: Object = {};
-    let sumOfLikes: number = 0;
-
-    //sum of likes 
-    if(topics){
-      console.log("in")
-      let topicDictionary: Object = JSON.parse(topics);
-      console.log(topicDictionary);
-      Object.entries(topicDictionary).forEach(([topic, isLiked]) => {
-        sumOfLikes += Number(isLiked);
-      });
-
-      Object.entries(topicDictionary).forEach(([topic, isLiked]) => {
-        
-      });
-    }
-
-
-
-
-    
   }
   
 
