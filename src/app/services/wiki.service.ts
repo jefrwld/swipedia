@@ -24,15 +24,12 @@ export class WikiService {
 
   getSemanticTopicsOfArticle(title: string): Observable<string[]> {
     const wikipediaUrl = `https://en.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(title)}&prop=pageprops&format=json&origin=*`;
-  
     return this.http.get<any>(wikipediaUrl).pipe(
       map(response => {
         const pages = response.query.pages;
         const firstPage = pages[Object.keys(pages)[0]];
         const wikidataId = firstPage?.pageprops?.wikibase_item;
-  
         if (!wikidataId) throw new Error("Keine Wikidata-ID gefunden");
-  
         return wikidataId;
       }),
       // Jetzt HTTP-Request an Wikidata
@@ -43,12 +40,10 @@ export class WikiService {
       map(wikidata => {
         const entity = Object.values(wikidata.entities)[0] as any;
         const claims = entity.claims;
-  
         const topicIds: string[] = [];
-  
         // Relevante Properties (du kannst hier noch weitere hinzufügen)
-        const relevantProperties = ['P101', 'P921', 'P106'];
-  
+        const relevantProperties = ['P101', 'P921', 'P106', 'P136', 'P410', 'P361', 'P31'];
+
         relevantProperties.forEach(prop => {
           if (claims[prop]) {
             claims[prop].forEach((claim: any) => {
@@ -57,7 +52,6 @@ export class WikiService {
             });
           }
         });
-  
         return topicIds; // Rückgabe: Liste von Wikidata-IDs der Themen
       }),
       // Optional: Wikidata-IDs in lesbare Labels umwandeln
@@ -75,28 +69,6 @@ export class WikiService {
     );
   }
   
-
-  getArticleForTopic(topic: string): Observable<string> {
-    const encodedTopic = encodeURIComponent(`Category:${topic}`);
-    const url = `https://en.wikipedia.org/w/api.php?action=query&list=categorymembers&cmtitle=${encodedTopic}&cmlimit=50&format=json&origin=*`;
-
-    return this.http.get<any>(url).pipe(
-      map(response => {
-        const members = response?.query?.categorymembers || [];
-
-        // Nur echte Artikel (ns = 0), keine Begriffsklärungen, keine Kategorien
-        const articles = members.filter((item: any) => item.ns === 0);
-
-        if (articles.length === 0) {
-          throw new Error('Keine Artikel in dieser Kategorie gefunden');
-        }
-
-        // Zufällig einen auswählen
-        const randomArticle = articles[Math.floor(Math.random() * articles.length)];
-        return randomArticle.title; // oder return whole article object
-      })
-    );
-  }
 
   getArticlesForWikidataTopic(topicId: string): Observable<string[]> {
     const query = `
@@ -118,10 +90,35 @@ export class WikiService {
         return results.map((r: any) => r.articleTitle.value);
       })
     );
-  }
+ }
+ 
+ getWikidataIdForTopic(topicLabel: string): Observable<string> {
+  const url = `https://www.wikidata.org/w/api.php`;
+  const params = new HttpParams()
+    .set('action', 'wbsearchentities')
+    .set('search', topicLabel)
+    .set('language', 'en')
+    .set('format', 'json')
+    .set('origin', '*');
+
+  return this.http.get<any>(url, { params }).pipe(
+    map(response => {
+      const results = response.search;
+      if (!results || results.length === 0) throw new Error('Keine Wikidata-ID gefunden');
+      return results[0].id; // z. B. "Q413"
+    })
+  );
+}
 
 
-  
+getArticleSummary(title: string): Observable<any> {
+  const url = `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title)}`;
+  return this.http.get<any>(url);
+}
+
+
+
+
 
 
 

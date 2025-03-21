@@ -1,6 +1,9 @@
 import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { WikiService } from '../services/wiki.service';
+import {switchMap} from 'rxjs/operators';
+import {map} from 'rxjs';
+
 
 @Component({
   selector: 'app-wiki',
@@ -15,48 +18,62 @@ export class WikiMainComponent {
 
   constructor() {
     this.fetchRandomArticle();
+    console.log("WikiService.getWikidataIdForTopic:", this.wikiService.getWikidataIdForTopic);
   }
 
+  //get random article from wikimedia api
   fetchRandomArticle() {
     this.wikiService.getRandomArticle().subscribe(data => {
       this.article.set(data);
     });
   }
 
+  // get related topics of an article
   fetchSemanticTopicsOfArticle(title: string) {
     this.wikiService.getSemanticTopicsOfArticle(title).subscribe(topics => {
       console.log("Semantische Themen:", topics);
       this.addTopicsToLikedTopics(topics);
     });
   }
-  
-
-  fetchArticleOfTopic(topic: string){
-    this.wikiService.getArticleForTopic(topic).subscribe(data => {
-      this.article.set(data);
-    })
-  }
-
-  fetchArticlesForTopicId(wikidataTopicId: string) {
-    this.wikiService.getArticlesForWikidataTopic(wikidataTopicId).subscribe(titles => {
-      const randomTitle = titles[Math.floor(Math.random() * titles.length)];
-      this.article.set({ title: randomTitle });
+ 
+  // get random article for concrete topic
+  fetchArticlesForTopic(topicLabel: string) {
+    this.wikiService.getWikidataIdForTopic(topicLabel).pipe(
+      switchMap(topicId => this.wikiService.getArticlesForWikidataTopic(topicId)),
+      map(titles => titles[Math.floor(Math.random() * titles.length)]),
+      switchMap(title => this.wikiService.getArticleSummary(title))
+    ).subscribe(article => {
+      if (article.extract && article.extract.trim().length > 0) {
+        this.article.set(article);
+      } else {
+        console.warn("Artikel ohne Inhalt – hole neuen.");
+        this.fetchRandomArticle();
+      }
+    }, err => {
+      console.error("Fehler bei Artikelsuche:", err);
+      this.fetchRandomArticle();
     });
   }
   
+ 
   
-
-
+  /* functions for app buttons */
   dontLike() {
     this.fetchRandomArticle();
   }
-
   like(title: string) {
-    this.fetchRandomArticle();
-    this.fetchSemanticTopicsOfArticle("Albert Einstein");
-    this.fetchArticlesForTopicId();
+    this.fetchSemanticTopicsOfArticle(title);
+    const likedTopic = this.getRandomLikedTopicByWeight();
+    if (likedTopic) {
+      this.fetchArticlesForTopic(likedTopic);
+    } else {
+      this.fetchRandomArticle(); // Fallback, falls noch nichts geliked
+    }
   }
+  
+  /* end button function */
 
+  // Save topics to local storage an generate weight based on count of likes
   addTopicsToLikedTopics(topics: string | string[]): void {
     if (!topics) return;
   
@@ -82,6 +99,23 @@ export class WikiMainComponent {
     localStorage.setItem('likedTopics', JSON.stringify(counts));
   }
   
-
+  getRandomLikedTopicByWeight(): string | null {
+    const raw = localStorage.getItem('likedTopics');
+    if (!raw) return null;
+  
+    const counts: Record<string, { count: number; weight: number }> = JSON.parse(raw);
+    const entries = Object.entries(counts);
+    const totalWeight = entries.reduce((sum, [, data]) => sum + data.weight, 0);
+    if (totalWeight === 0) return null;
+  
+    const r = Math.random() * totalWeight;
+    let acc = 0;
+    for (const [topic, data] of entries) {
+      acc += data.weight;
+      if (r <= acc) return topic;
+    }
+    return entries[entries.length - 1][0]; // Fallback
+  }
+  
 }
 
