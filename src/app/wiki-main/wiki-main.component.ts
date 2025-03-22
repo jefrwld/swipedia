@@ -79,35 +79,16 @@ export class WikiMainComponent {
   
   /* functions for app buttons */
   dontlike() {
-    const interestRate = 0.7;
-    const r = Math.random();
-    
-    if (r < interestRate) {
-      const topic = this.getRandomLikedTopicByWeight();
-      if (topic) {
-        this.topicNotification = `Empfohlen aus deinen Interessen (nach Dislike): ${topic}`;
-        this.fetchArticlesForTopic(topic);
-      } else {
-        this.topicNotification = `Zufälliger Artikel (kein Interessenprofil vorhanden)`;
-        this.fetchRandomArticle();
-      }
-    } else {
-      this.topicNotification = `Zufälliger Artikel (nach Dislike)`;
-      this.fetchRandomArticle();
-    }
-    
+    this.showNextArticleBasedOnInterestOrRandom('dislike'); // ← gleiche Anzeige-Logik, kein Profil-Lernen
   }
+
   
   
   like(title: string) {
-    this.fetchSemanticTopicsOfArticle(title);
-    const likedTopic = this.getRandomLikedTopicByWeight();
-    if (likedTopic) {
-      this.fetchArticlesForTopic(likedTopic);
-    } else {
-      this.fetchRandomArticle(); // Fallback, falls noch nichts geliked
-    }
+    this.fetchSemanticTopicsOfArticle(title); // ← verändert das Profil
+    this.showNextArticleBasedOnInterestOrRandom('like'); // ← entscheidet Anzeige
   }
+  
   
   /* end button function */
 
@@ -164,6 +145,27 @@ export class WikiMainComponent {
     const counts = JSON.parse(raw);
     return counts[topicLabel]?.weight ?? null;
   }
+
+
+  showNextArticleBasedOnInterestOrRandom(context: 'like' | 'dislike') {
+    const interestRate = 0.7; // 70 % interessensbasiert
+    const r = Math.random();
+  
+    if (r < interestRate) {
+      const topic = this.getRandomLikedTopicByWeight();
+      if (topic) {
+        this.topicNotification = `Empfohlen aus deinen Interessen (${context}): ${topic}`;
+        this.fetchArticlesForTopic(topic);
+      } else {
+        this.topicNotification = `Zufälliger Artikel (${context}) – kein Interessenprofil vorhanden`;
+        this.fetchRandomArticle();
+      }
+    } else {
+      this.topicNotification = `Zufälliger Artikel (${context})`;
+      this.fetchRandomArticle();
+    }
+  }
+  
   
 }
 
