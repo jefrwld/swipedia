@@ -79,19 +79,23 @@ export class WikiMainComponent {
   
   /* functions for app buttons */
   dontlike() {
-    const explorationRate = 0.3; // 30 % interessensbasiert, 70 % zufällig
+    const interestRate = 0.7;
     const r = Math.random();
-  
-    if (r < explorationRate) {
+    
+    if (r < interestRate) {
       const topic = this.getRandomLikedTopicByWeight();
       if (topic) {
-        this.fetchArticlesForTopic(topic); // nur anzeigen, kein Lernen
+        this.topicNotification = `Empfohlen aus deinen Interessen (nach Dislike): ${topic}`;
+        this.fetchArticlesForTopic(topic);
       } else {
+        this.topicNotification = `Zufälliger Artikel (kein Interessenprofil vorhanden)`;
         this.fetchRandomArticle();
       }
     } else {
+      this.topicNotification = `Zufälliger Artikel (nach Dislike)`;
       this.fetchRandomArticle();
     }
+    
   }
   
   
