@@ -72,14 +72,21 @@ export class WikiService {
 
   getArticlesForWikidataTopic(topicId: string): Observable<string[]> {
     const query = `
-      SELECT ?articleTitle WHERE {
+    SELECT ?articleTitle WHERE {
+      {
         ?item wdt:P921 wd:${topicId} .
-        ?article schema:about ?item .
-        ?article schema:isPartOf <https://en.wikipedia.org/> .
-        ?article schema:name ?articleTitle .
+      } UNION {
+        ?item wdt:P106 wd:${topicId} .
+      } UNION {
+        ?item wdt:P101 wd:${topicId} .
       }
-      LIMIT 50
-    `;
+      ?article schema:about ?item .
+      ?article schema:isPartOf <https://en.wikipedia.org/> .
+      ?article schema:name ?articleTitle .
+    }
+    LIMIT 50
+  `;
+  
     const url = 'https://query.wikidata.org/sparql';
     const headers = { 'Accept': 'application/sparql-results+json' };
     const params = new HttpParams().set('query', query);
@@ -87,7 +94,12 @@ export class WikiService {
     return this.http.get<any>(url, { headers, params }).pipe(
       map(response => {
         const results = response.results?.bindings || [];
-        return results.map((r: any) => r.articleTitle.value);
+        console.log(results);
+        if(results){
+          return results.map((r: any) => r.articleTitle.value);
+        } else {
+          this.getRandomArticle();  
+        }
       })
     );
  }
