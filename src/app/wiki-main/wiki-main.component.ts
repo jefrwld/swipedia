@@ -16,6 +16,7 @@ export class WikiMainComponent {
   private wikiService = inject(WikiService);
   article = signal<any>(null);
 
+  topicNotification = '';
   constructor() {
     this.fetchRandomArticle();
     console.log("WikiService.getWikidataIdForTopic:", this.wikiService.getWikidataIdForTopic);
@@ -39,14 +40,32 @@ export class WikiMainComponent {
   // get random article for concrete topic
   fetchArticlesForTopic(topicLabel: string) {
     this.wikiService.getWikidataIdForTopic(topicLabel).pipe(
-      switchMap(topicId => this.wikiService.getArticlesForWikidataTopic(topicId)),
-      map(titles => titles[Math.floor(Math.random() * titles.length)]),
-      switchMap(title => this.wikiService.getArticleSummary(title))
+      switchMap(topicId => this.wikiService.getArticlesForWikidataTopic(topicId).pipe(
+        map(titles => {
+          if (!titles || titles.length === 0) {
+            console.warn(`Keine Artikel gefunden für Topic: ${topicLabel} → Fallback.`);
+            return null; // später handled
+          }
+          const randomTitle = titles[Math.floor(Math.random() * titles.length)];
+          return randomTitle;
+        })
+      )),
+      switchMap(title => {
+        if(!title){
+            this.topicNotification = 'random artikel';
+            return this.wikiService.getRandomArticle();
+        }
+        return this.wikiService.getArticleSummary(title);
+      })
     ).subscribe(article => {
-      if (article.extract && article.extract.trim().length > 0) {
+      if (article?.extract?.trim()?.length > 0) {
         this.article.set(article);
+        const weight = this.getTopicWeight(topicLabel);
+        this.topicNotification = weight !== null
+          ? `Empfohlen wegen Thema: ${topicLabel} (${weight.toFixed(1)} %)`
+          : `Empfohlen wegen Thema: ${topicLabel}`;
       } else {
-        console.warn("Artikel ohne Inhalt – hole neuen.");
+        console.warn("Artikel ohne Textinhalt – hole neuen.");
         this.fetchRandomArticle();
       }
     }, err => {
@@ -55,11 +74,13 @@ export class WikiMainComponent {
     });
   }
   
+  
  
   
   /* functions for app buttons */
   dontLike() {
     this.fetchRandomArticle();
+    this.topicNotification = '';
   }
   like(title: string) {
     this.fetchSemanticTopicsOfArticle(title);
@@ -86,7 +107,8 @@ export class WikiMainComponent {
         if (!counts[topic]) {
           counts[topic] = { count: 0, weight: 0 };
         }
-        counts[topic].count += 1;
+        counts[topic].count += 1 + Math.log(1 + counts[topic].count);
+
       }
     });
   
@@ -115,6 +137,15 @@ export class WikiMainComponent {
       if (r <= acc) return topic;
     }
     return entries[entries.length - 1][0]; // Fallback
+  }
+
+
+  getTopicWeight(topicLabel: string): number | null {
+    const raw = localStorage.getItem('likedTopics');
+    if (!raw) return null;
+  
+    const counts = JSON.parse(raw);
+    return counts[topicLabel]?.weight ?? null;
   }
   
 }

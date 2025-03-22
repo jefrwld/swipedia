@@ -94,12 +94,7 @@ export class WikiService {
     return this.http.get<any>(url, { headers, params }).pipe(
       map(response => {
         const results = response.results?.bindings || [];
-        console.log(results);
-        if(results){
-          return results.map((r: any) => r.articleTitle.value);
-        } else {
-          this.getRandomArticle();  
-        }
+        return results.map((r: any) => r.articleTitle.value);
       })
     );
  }
