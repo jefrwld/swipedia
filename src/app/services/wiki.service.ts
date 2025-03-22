@@ -29,7 +29,7 @@ export class WikiService {
         const pages = response.query.pages;
         const firstPage = pages[Object.keys(pages)[0]];
         const wikidataId = firstPage?.pageprops?.wikibase_item;
-        if (!wikidataId) throw new Error("Keine Wikidata-ID gefunden");
+        if (!wikidataId) throw new Error("No Wikidata Id found");
         return wikidataId;
       }),
       // Jetzt HTTP-Request an Wikidata
@@ -41,7 +41,7 @@ export class WikiService {
         const entity = Object.values(wikidata.entities)[0] as any;
         const claims = entity.claims;
         const topicIds: string[] = [];
-        // Relevante Properties (du kannst hier noch weitere hinzufügen)
+        // Relevante Properties 
         const relevantProperties = ['P101', 'P921', 'P106', 'P136', 'P410', 'P361', 'P31'];
 
         relevantProperties.forEach(prop => {
@@ -52,9 +52,8 @@ export class WikiService {
             });
           }
         });
-        return topicIds; // Rückgabe: Liste von Wikidata-IDs der Themen
+        return topicIds; 
       }),
-      // Optional: Wikidata-IDs in lesbare Labels umwandeln
       switchMap((topicIds: string[]) => {
         if (topicIds.length === 0) return of([]);
         const idsStr = topicIds.join('|');

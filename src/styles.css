@@ -70,4 +70,15 @@
   font-style: italic;
 }
 
+@media (max-width: 390px) {
+  .card-buttons {
+      width: 100%;
+      margin-bottom: 10px;
+  }
+  .article-content{
+      width: 100%;
+  }
+
+}
+
   
