@@ -4,7 +4,6 @@ import { WikiService } from '../services/wiki.service';
 import {switchMap} from 'rxjs/operators';
 import {map} from 'rxjs';
 
-
 @Component({
   selector: 'app-wiki',
   standalone: true,
@@ -79,12 +78,12 @@ export class WikiMainComponent {
   
   /* functions for app buttons */
   dontlike() {
+    console.log("swipe right erkannt");
     this.showNextArticleBasedOnInterestOrRandom('dislike'); // ← gleiche Anzeige-Logik, kein Profil-Lernen
   }
 
-  
-  
   like(title: string) {
+    console.log("swipe left erkannt");
     this.fetchSemanticTopicsOfArticle(title); // ← verändert das Profil
     this.showNextArticleBasedOnInterestOrRandom('like'); // ← entscheidet Anzeige
   }
