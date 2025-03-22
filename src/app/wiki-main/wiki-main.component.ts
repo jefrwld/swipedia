@@ -78,10 +78,23 @@ export class WikiMainComponent {
  
   
   /* functions for app buttons */
-  dontLike() {
-    this.fetchRandomArticle();
-    this.topicNotification = '';
+  dontlike() {
+    const explorationRate = 0.3; // 30 % interessensbasiert, 70 % zufällig
+    const r = Math.random();
+  
+    if (r < explorationRate) {
+      const topic = this.getRandomLikedTopicByWeight();
+      if (topic) {
+        this.fetchArticlesForTopic(topic); // nur anzeigen, kein Lernen
+      } else {
+        this.fetchRandomArticle();
+      }
+    } else {
+      this.fetchRandomArticle();
+    }
   }
+  
+  
   like(title: string) {
     this.fetchSemanticTopicsOfArticle(title);
     const likedTopic = this.getRandomLikedTopicByWeight();
