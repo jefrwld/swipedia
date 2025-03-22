@@ -3,7 +3,7 @@
     
     <!-- Bild anzeigen, falls vorhanden -->
      <div class="article-image-wrapper">
-      <img class="article-image" *ngIf="article().thumbnail" [src]="article().thumbnail.source" [alt]="article().title">
+      <img class="article-image" *ngIf="article().thumbnail || 'assets/fallback.jpg' " [src]="article().thumbnail.source" [alt]="article().title">
      </div>
 
     <h2 class="title">{{ article().title }}</h2>
