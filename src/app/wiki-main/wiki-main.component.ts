@@ -157,7 +157,7 @@ export class WikiMainComponent {
         this.topicNotification = `Empfohlen aus deinen Interessen (${context}): ${topic}`;
         this.fetchArticlesForTopic(topic);
       } else {
-        this.topicNotification = `Zufälliger Artikel (${context}) – kein Interessenprofil vorhanden`;
+        this.topicNotification = `Zufälliger Artikel (${context})`;
         this.fetchRandomArticle();
       }
     } else {
