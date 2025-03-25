@@ -61,8 +61,8 @@ export class WikiMainComponent {
         this.article.set(article);
         const weight = this.getTopicWeight(topicLabel);
         this.topicNotification = weight !== null
-          ? `Empfohlen wegen Thema: ${topicLabel} (${weight.toFixed(1)} %)`
-          : `Empfohlen wegen Thema: ${topicLabel}`;
+          ? ` matches your interest in topic: ${topicLabel} (${weight.toFixed(1)} %)`
+          : ` matches your interest in topic: ${topicLabel}`;
       } else {
         console.warn("Artikel ohne Textinhalt – hole neuen.");
         this.fetchRandomArticle();
