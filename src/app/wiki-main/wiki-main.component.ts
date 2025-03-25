@@ -1,155 +1,198 @@
-import { Component, inject, signal } from '@angular/core';
+import {
+  Component,
+  inject,
+  signal,
+  AfterViewInit,
+  ElementRef,
+  ViewChild,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { WikiService } from '../services/wiki.service';
-import {switchMap} from 'rxjs/operators';
-import {map} from 'rxjs';
+import { switchMap } from 'rxjs/operators';
+import { map } from 'rxjs';
+import { HAMMER_GESTURE_CONFIG } from '@angular/platform-browser';
+import { MyHammerConfig } from '../gesture-config';
+
+declare const Hammer: any;
 
 @Component({
   selector: 'app-wiki',
   standalone: true,
   imports: [CommonModule],
+  providers: [
+    {
+      provide: HAMMER_GESTURE_CONFIG,
+      useClass: MyHammerConfig,
+    },
+  ],
   templateUrl: './wiki-main.component.html',
-  styleUrls: ['./wiki-main.component.css']
+  styleUrls: ['./wiki-main.component.css'],
 })
-export class WikiMainComponent {
+export class WikiMainComponent implements AfterViewInit {
   private wikiService = inject(WikiService);
   article = signal<any>(null);
-
   topicNotification = '';
+
+  @ViewChild('wrapperRef') wrapperRef!: ElementRef;
+
   constructor() {
     this.fetchRandomArticle();
-    console.log("WikiService.getWikidataIdForTopic:", this.wikiService.getWikidataIdForTopic);
   }
 
-  //get random article from wikimedia api
+  ngAfterViewInit() {
+    const el = this.wrapperRef.nativeElement;
+    const hammertime = new Hammer(el);
+
+    hammertime.on('swipeleft swiperight', (ev: any) => {
+      console.log('Manuell erkannt via HammerJS:', ev.type);
+      if (ev.type === 'swipeleft') {
+        this.onSwipeLeft();
+      } else if (ev.type === 'swiperight') {
+        this.onSwipeRight();
+      }
+    });
+  }
+
+  onTouchStart(event: TouchEvent) {
+    console.log('Touchstart erkannt!', event);
+  }
+
+  onSwipeLeft() {
+    console.log('Nach links gewischt');
+    this.dontlike();
+  }
+
+  onSwipeRight() {
+    console.log('Nach rechts gewischt');
+    const art = this.article();
+    if (art) {
+      this.like(art.title);
+    }
+  }
+
   fetchRandomArticle() {
-    this.wikiService.getRandomArticle().subscribe(data => {
+    this.wikiService.getRandomArticle().subscribe((data) => {
       this.article.set(data);
     });
   }
 
-  // get related topics of an article
   fetchSemanticTopicsOfArticle(title: string) {
-    this.wikiService.getSemanticTopicsOfArticle(title).subscribe(topics => {
-      console.log("Semantische Themen:", topics);
+    this.wikiService.getSemanticTopicsOfArticle(title).subscribe((topics) => {
       this.addTopicsToLikedTopics(topics);
     });
   }
- 
-  // get random article for concrete topic
+
   fetchArticlesForTopic(topicLabel: string) {
-    this.wikiService.getWikidataIdForTopic(topicLabel).pipe(
-      switchMap(topicId => this.wikiService.getArticlesForWikidataTopic(topicId).pipe(
-        map(titles => {
-          if (!titles || titles.length === 0) {
-            console.warn(`Keine Artikel gefunden für Topic: ${topicLabel} → Fallback.`);
-            return null; // später handled
-          }
-          const randomTitle = titles[Math.floor(Math.random() * titles.length)];
-          return randomTitle;
-        })
-      )),
-      switchMap(title => {
-        if(!title){
+    this.wikiService
+      .getWikidataIdForTopic(topicLabel)
+      .pipe(
+        switchMap((topicId) =>
+          this.wikiService.getArticlesForWikidataTopic(topicId).pipe(
+            map((titles) => {
+              if (!titles || titles.length === 0) return null;
+              const randomTitle =
+                titles[Math.floor(Math.random() * titles.length)];
+              return randomTitle;
+            })
+          )
+        ),
+        switchMap((title) => {
+          if (!title) {
             this.topicNotification = 'random artikel';
             return this.wikiService.getRandomArticle();
+          }
+          return this.wikiService.getArticleSummary(title);
+        })
+      )
+      .subscribe(
+        (article) => {
+          if (article?.extract?.trim()?.length > 0) {
+            this.article.set(article);
+            const weight = this.getTopicWeight(topicLabel);
+            this.topicNotification = weight !== null
+              ? ` matches your interest in topic: ${topicLabel} (${weight.toFixed(1)} %)`
+              : ` matches your interest in topic: ${topicLabel}`;
+          } else {
+            this.fetchRandomArticle();
+          }
+        },
+        (err) => {
+          console.error('Fehler bei Artikelsuche:', err);
+          this.fetchRandomArticle();
         }
-        return this.wikiService.getArticleSummary(title);
-      })
-    ).subscribe(article => {
-      if (article?.extract?.trim()?.length > 0) {
-        this.article.set(article);
-        const weight = this.getTopicWeight(topicLabel);
-        this.topicNotification = weight !== null
-          ? ` matches your interest in topic: ${topicLabel} (${weight.toFixed(1)} %)`
-          : ` matches your interest in topic: ${topicLabel}`;
-      } else {
-        console.warn("Artikel ohne Textinhalt – hole neuen.");
-        this.fetchRandomArticle();
-      }
-    }, err => {
-      console.error("Fehler bei Artikelsuche:", err);
-      this.fetchRandomArticle();
-    });
+      );
   }
-  
-  
- 
-  
-  /* functions for app buttons */
+
   dontlike() {
-    console.log("swipe right erkannt");
-    this.showNextArticleBasedOnInterestOrRandom('dislike'); // ← gleiche Anzeige-Logik, kein Profil-Lernen
+    this.showNextArticleBasedOnInterestOrRandom('dislike');
   }
 
   like(title: string) {
-    console.log("swipe left erkannt");
-    this.fetchSemanticTopicsOfArticle(title); // ← verändert das Profil
-    this.showNextArticleBasedOnInterestOrRandom('like'); // ← entscheidet Anzeige
+    this.fetchSemanticTopicsOfArticle(title);
+    this.showNextArticleBasedOnInterestOrRandom('like');
   }
-  
-  
-  /* end button function */
 
-  // Save topics to local storage an generate weight based on count of likes
   addTopicsToLikedTopics(topics: string | string[]): void {
     if (!topics) return;
-  
     const raw = localStorage.getItem('likedTopics');
-    const counts: Record<string, { count: number; weight: number }> = raw ? JSON.parse(raw) : {};
+    const counts: Record<string, { count: number; weight: number }> = raw
+      ? JSON.parse(raw)
+      : {};
     const newTopics = Array.isArray(topics) ? topics : [topics];
-  
-    newTopics.forEach(topic => {
+
+    newTopics.forEach((topic) => {
       if (typeof topic === 'string' && topic.trim() !== '') {
         if (!counts[topic]) {
           counts[topic] = { count: 0, weight: 0 };
         }
         counts[topic].count += 1 + Math.log(1 + counts[topic].count);
-
       }
     });
-  
-    const totalLikes = Object.values(counts).reduce((sum, entry) => sum + entry.count, 0);
-  
+
+    const totalLikes = Object.values(counts).reduce(
+      (sum, entry) => sum + entry.count,
+      0
+    );
+
     Object.entries(counts).forEach(([topic, data]) => {
-      data.weight = totalLikes > 0 ? +(data.count / totalLikes * 100).toFixed(2) : 0;
+      data.weight = totalLikes > 0
+        ? +(data.count / totalLikes * 100).toFixed(2)
+        : 0;
     });
-  
+
     localStorage.setItem('likedTopics', JSON.stringify(counts));
   }
-  
+
   getRandomLikedTopicByWeight(): string | null {
     const raw = localStorage.getItem('likedTopics');
     if (!raw) return null;
-  
-    const counts: Record<string, { count: number; weight: number }> = JSON.parse(raw);
+    const counts: Record<string, { count: number; weight: number }> =
+      JSON.parse(raw);
     const entries = Object.entries(counts);
-    const totalWeight = entries.reduce((sum, [, data]) => sum + data.weight, 0);
+    const totalWeight = entries.reduce(
+      (sum, [, data]) => sum + data.weight,
+      0
+    );
     if (totalWeight === 0) return null;
-  
     const r = Math.random() * totalWeight;
     let acc = 0;
     for (const [topic, data] of entries) {
       acc += data.weight;
       if (r <= acc) return topic;
     }
-    return entries[entries.length - 1][0]; // Fallback
+    return entries[entries.length - 1][0];
   }
-
 
   getTopicWeight(topicLabel: string): number | null {
     const raw = localStorage.getItem('likedTopics');
     if (!raw) return null;
-  
     const counts = JSON.parse(raw);
     return counts[topicLabel]?.weight ?? null;
   }
 
-
   showNextArticleBasedOnInterestOrRandom(context: 'like' | 'dislike') {
-    const interestRate = 0.7; // 70 % interessensbasiert
+    const interestRate = 0.7;
     const r = Math.random();
-  
     if (r < interestRate) {
       const topic = this.getRandomLikedTopicByWeight();
       if (topic) {
@@ -164,7 +207,4 @@ export class WikiMainComponent {
       this.fetchRandomArticle();
     }
   }
-  
-  
 }
-

@@ -1,22 +1,35 @@
-<div class="main-wrapper">
+<div class="main-wrapper"
+     #wrapperRef
+     (swipeleft)="onSwipeLeft()"
+     (swiperight)="onSwipeRight()"
+     (touchstart)="onTouchStart($event)">
 
-  <div *ngIf="article()" class="article-content">
+  <ng-container *ngIf="article() as art">
     
-    <!-- Bild anzeigen, falls vorhanden -->
-     <div class="article-image-wrapper">
-      <img class="article-image" *ngIf="article().thumbnail || 'assets/fallback.jpg' " [src]="article().thumbnail.source" [alt]="article().title">
-     </div>
+    <div class="article-content">
+      <div class="article-image-wrapper">
+        <img
+          class="article-image"
+          *ngIf="art.thumbnail"
+          [src]="art.thumbnail.source"
+          [alt]="art.title" />
+      </div>
 
-    <h2 class="title">{{ article().title }}</h2>
-    <p class="topic-notification">{{this.topicNotification}}</p>
-    <div class="article-text-content">
-      <p>{{ article().extract }}</p>
+      <h2 class="title">{{ art.title }}</h2>
+      <p class="topic-notification">{{ topicNotification }}</p>
+
+      <div class="article-text-content">
+        <p>{{ art.extract }}</p>
+      </div>
     </div>
 
-  </div>
     <div class="card-buttons">
-      <i (click)="like(article().title)" class="fa-solid fa-heart fa-xl btn"></i>
-      <a [href]="'https://en.wikipedia.org/wiki/' + article().title" target="_blank" class="btn">Read more</a>
+      <i (click)="like(art.title)" class="fa-solid fa-heart fa-xl btn"></i>
+      <a [href]="'https://en.wikipedia.org/wiki/' + art.title"
+         target="_blank"
+         class="btn">Read more</a>
       <i (click)="dontlike()" class="fa-solid fa-ban fa-xl btn"></i>
     </div>
+
+  </ng-container>
 </div>
