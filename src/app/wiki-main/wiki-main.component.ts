@@ -110,8 +110,8 @@ export class WikiMainComponent implements AfterViewInit {
             this.article.set(article);
             const weight = this.getTopicWeight(topicLabel);
             this.topicNotification = weight !== null
-              ? ` matches your interest in topic: ${topicLabel} (${weight.toFixed(1)} %)`
-              : ` matches your interest in topic: ${topicLabel}`;
+              ? `liked topic: ${topicLabel} (${weight.toFixed(1)} %)`
+              : `liked topic: ${topicLabel}`;
           } else {
             this.fetchRandomArticle();
           }
@@ -196,14 +196,14 @@ export class WikiMainComponent implements AfterViewInit {
     if (r < interestRate) {
       const topic = this.getRandomLikedTopicByWeight();
       if (topic) {
-        this.topicNotification = `Empfohlen aus deinen Interessen (${context}): ${topic}`;
+        this.topicNotification = `liked topic: (${context}): ${topic}`;
         this.fetchArticlesForTopic(topic);
       } else {
-        this.topicNotification = `Zufälliger Artikel (${context})`;
+        this.topicNotification = `random article (${context})`;
         this.fetchRandomArticle();
       }
     } else {
-      this.topicNotification = `Zufälliger Artikel (${context})`;
+      this.topicNotification = `random article: (${context})`;
       this.fetchRandomArticle();
     }
   }
