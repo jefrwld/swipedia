@@ -12,7 +12,13 @@ import { switchMap } from 'rxjs/operators';
 import { map } from 'rxjs';
 import { HAMMER_GESTURE_CONFIG } from '@angular/platform-browser';
 import { MyHammerConfig } from '../gesture-config';
-
+import {
+  trigger,
+  state,
+  style,
+  animate,
+  transition
+} from '@angular/animations';
 declare const Hammer: any;
 
 @Component({
@@ -27,30 +33,40 @@ declare const Hammer: any;
   ],
   templateUrl: './wiki-main.component.html',
   styleUrls: ['./wiki-main.component.css'],
+  animations: [
+    trigger('swipeCard', [
+      state('center', style({ transform: 'translateX(0)', opacity: 1 })),
+      state('left', style({ transform: 'translateX(-150%)', opacity: 0 })),
+      state('right', style({ transform: 'translateX(150%)', opacity: 0 })),
+      transition('center => left', animate('300ms ease-out')),
+      transition('center => right', animate('300ms ease-out')),
+      transition('* => center', animate('300ms ease-in'))
+    ])
+  ]
+  
+  
 })
-export class WikiMainComponent implements AfterViewInit {
+export class WikiMainComponent {
+  swipeState = signal<'center' | 'left' | 'right'>('center');
+
+
+  incomingDirection = signal<'from-left' | 'from-right'>('from-right');
   private wikiService = inject(WikiService);
   article = signal<any>(null);
   topicNotification = '';
 
-  @ViewChild('wrapperRef') wrapperRef!: ElementRef;
+  @ViewChild('wrapperRef') set wrapper(elRef: ElementRef | undefined) {
+    if (!elRef) return;
+
+    const hammertime = new Hammer(elRef.nativeElement);
+    hammertime.on('swipeleft swiperight', (ev: any) => {
+      if (ev.type === 'swipeleft') this.onSwipeLeft();
+      if (ev.type === 'swiperight') this.onSwipeRight();
+    });
+  }
 
   constructor() {
     this.fetchRandomArticle();
-  }
-
-  ngAfterViewInit() {
-    const el = this.wrapperRef.nativeElement;
-    const hammertime = new Hammer(el);
-
-    hammertime.on('swipeleft swiperight', (ev: any) => {
-      console.log('Manuell erkannt via HammerJS:', ev.type);
-      if (ev.type === 'swipeleft') {
-        this.onSwipeLeft();
-      } else if (ev.type === 'swiperight') {
-        this.onSwipeRight();
-      }
-    });
   }
 
   onTouchStart(event: TouchEvent) {
@@ -58,18 +74,23 @@ export class WikiMainComponent implements AfterViewInit {
   }
 
   onSwipeLeft() {
-    console.log('Nach links gewischt');
-    this.dontlike();
+    this.swipeState.set('left');
+    setTimeout(() => {
+      this.dontlike();
+      this.swipeState.set('center');
+    }, 300);
   }
-
+  
   onSwipeRight() {
-    console.log('Nach rechts gewischt');
-    const art = this.article();
-    if (art) {
-      this.like(art.title);
-    }
+    this.swipeState.set('right');
+    setTimeout(() => {
+      const art = this.article();
+      if (art) this.like(art.title);
+      this.swipeState.set('center');
+    }, 300);
   }
-
+  
+  
   fetchRandomArticle() {
     this.wikiService.getRandomArticle().subscribe((data) => {
       this.article.set(data);
@@ -111,7 +132,7 @@ export class WikiMainComponent implements AfterViewInit {
             const weight = this.getTopicWeight(topicLabel);
             this.topicNotification = weight !== null
               ? `liked topic: ${topicLabel} (${weight.toFixed(1)} %)`
-              : `liked topic: ${topicLabel}`;
+              : `${topicLabel}`;
           } else {
             this.fetchRandomArticle();
           }

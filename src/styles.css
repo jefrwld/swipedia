@@ -1,4 +1,5 @@
 .main-wrapper {
+  will-change: transform, opacity;
   display: flex;
   justify-content: center;
   width: 100%;

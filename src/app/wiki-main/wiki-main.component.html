@@ -1,42 +1,41 @@
-<div class="main-wrapper"
+<div *ngIf="article() as art"
+     class="main-wrapper"
+     [@swipeCard]="swipeState()"
      #wrapperRef
      (swipeleft)="onSwipeLeft()"
      (swiperight)="onSwipeRight()"
      (touchstart)="onTouchStart($event)">
 
-  <ng-container *ngIf="article() as art">
+
+  <div class="article-content">
+    <div class="article-image-wrapper">
+      <img
+        class="article-image"
+        *ngIf="art.thumbnail"
+        [src]="art.thumbnail.source"
+        [alt]="art.title" />
     
-    <div class="article-content">
-      <div class="article-image-wrapper">
-        <img
-          class="article-image"
-          *ngIf="art.thumbnail"
-          [src]="art.thumbnail.source"
-          [alt]="art.title" />
-      
-        <p *ngIf="!art.thumbnail" class="no-image-text">
-          No image for this article
-        </p>
-      </div>
-      
-
-      <h2 class="title">{{ art.title }}</h2>
-      <div class="notification-wrapper">
-        <p class="topic-notification">{{ topicNotification }}</p>
-      </div>
-
-      <div class="article-text-content">
-        <p>{{ art.extract }}</p>
-      </div>
+      <p *ngIf="!art.thumbnail" class="no-image-text">
+        No image for this article
+      </p>
     </div>
 
-    <div class="card-buttons">
-      <i (click)="like(art.title)" class="fa-solid fa-heart fa-xl btn"></i>
-      <a [href]="'https://en.wikipedia.org/wiki/' + art.title"
-         target="_blank"
-         class="btn">Read more</a>
-      <i (click)="dontlike()" class="fa-solid fa-ban fa-xl btn"></i>
+    <h2 class="title">{{ art.title }}</h2>
+    <div class="notification-wrapper">
+      <p class="topic-notification">{{ topicNotification }}</p>
     </div>
 
-  </ng-container>
+    <div class="article-text-content">
+      <p>{{ art.extract }}</p>
+    </div>
+  </div>
+
+  <div class="card-buttons">
+    <i (click)="like(art.title)" class="fa-solid fa-heart fa-xl btn"></i>
+    <a [href]="'https://en.wikipedia.org/wiki/' + art.title"
+       target="_blank"
+       class="btn">Read more</a>
+    <i (click)="dontlike()" class="fa-solid fa-ban fa-xl btn"></i>
+  </div>
 </div>
+
